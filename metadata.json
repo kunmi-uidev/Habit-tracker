@@ -1,0 +1,6 @@
+{
+  "name": "Kunmi Habit Tracker",
+  "description": "A minimalist and polished habit tracking application to help you stay productive and achieve your goals.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

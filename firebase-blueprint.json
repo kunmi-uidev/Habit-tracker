@@ -1,0 +1,39 @@
+{
+  "entities": {
+    "Habit": {
+      "title": "Habit",
+      "description": "A habit tracked by the user.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "The name of the habit." },
+        "icon": { "type": "string", "enum": ["run", "water"], "description": "Icon type for the habit." },
+        "completedDays": { "type": "array", "description": "Boolean array of completion for the last 7 days." },
+        "isCompletedToday": { "type": "boolean", "description": "Whether the habit was completed today." },
+        "streak": { "type": "number", "description": "Current streak count." },
+        "userId": { "type": "string", "description": "The UID of the owner." },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "icon", "completedDays", "isCompletedToday", "streak", "userId"]
+    },
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Public profile information for a user.",
+      "type": "object",
+      "properties": {
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "email": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}/habits/{habitId}": {
+      "schema": "Habit",
+      "description": "User specific habits."
+    },
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User profile document."
+    }
+  }
+}

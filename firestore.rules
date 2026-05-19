@@ -1,0 +1,49 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isValidHabit(data) {
+      return data.title is string && data.title.size() <= 100 &&
+             data.icon in ['run', 'water'] &&
+             data.completedDays is list && data.completedDays.size() == 7 &&
+             data.isCompletedToday is bool &&
+             data.streak is number &&
+             data.userId == request.auth.uid;
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create, update: if isOwner(userId);
+
+      match /habits/{habitId} {
+        allow list: if isOwner(userId);
+        allow get: if isOwner(userId) && isValidId(habitId);
+        
+        allow create: if isOwner(userId) && isValidId(habitId) && 
+          isValidHabit(request.resource.data) &&
+          request.resource.data.updatedAt == request.time;
+
+        allow update: if isOwner(userId) && isValidId(habitId) &&
+          isValidHabit(request.resource.data) &&
+          request.resource.data.updatedAt == request.time;
+
+        allow delete: if isOwner(userId) && isValidId(habitId);
+      }
+    }
+  }
+}
