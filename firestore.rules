@@ -19,7 +19,7 @@ service cloud.firestore {
 
     function isValidHabit(data) {
       return data.title is string && data.title.size() <= 100 &&
-             data.icon in ['run', 'water'] &&
+             data.icon is string && data.icon.size() <= 100 &&
              data.completedDays is list && data.completedDays.size() == 7 &&
              data.isCompletedToday is bool &&
              data.streak is number &&
@@ -43,6 +43,27 @@ service cloud.firestore {
           request.resource.data.updatedAt == request.time;
 
         allow delete: if isOwner(userId) && isValidId(habitId);
+      }
+
+      match /notifications/{notificationId} {
+        allow list: if isOwner(userId);
+        allow get: if isOwner(userId) && isValidId(notificationId);
+        
+        allow create: if isOwner(userId) && isValidId(notificationId) &&
+          request.resource.data.title is string && request.resource.data.title.size() <= 150 &&
+          request.resource.data.body is string && request.resource.data.body.size() <= 1000 &&
+          request.resource.data.type in ['reminder', 'motivation', 'congratulations', 'streak'] &&
+          request.resource.data.isRead is bool &&
+          request.resource.data.userId == userId;
+
+        allow update: if isOwner(userId) && isValidId(notificationId) &&
+          request.resource.data.title is string && request.resource.data.title.size() <= 150 &&
+          request.resource.data.body is string && request.resource.data.body.size() <= 1000 &&
+          request.resource.data.type in ['reminder', 'motivation', 'congratulations', 'streak'] &&
+          request.resource.data.isRead is bool &&
+          request.resource.data.userId == userId;
+
+        allow delete: if isOwner(userId) && isValidId(notificationId);
       }
     }
   }

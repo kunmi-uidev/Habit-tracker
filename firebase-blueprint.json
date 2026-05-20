@@ -6,7 +6,7 @@
       "type": "object",
       "properties": {
         "title": { "type": "string", "description": "The name of the habit." },
-        "icon": { "type": "string", "enum": ["run", "water"], "description": "Icon type for the habit." },
+        "icon": { "type": "string", "description": "Icon type for the habit." },
         "completedDays": { "type": "array", "description": "Boolean array of completion for the last 7 days." },
         "isCompletedToday": { "type": "boolean", "description": "Whether the habit was completed today." },
         "streak": { "type": "number", "description": "Current streak count." },
@@ -24,12 +24,30 @@
         "photoURL": { "type": "string" },
         "email": { "type": "string" }
       }
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "An in-app or push alert for reminders, motivs, congratulations, and streaks.",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string", "description": "The header/title of the alert." },
+        "body": { "type": "string", "description": "The text content/body." },
+        "type": { "type": "string", "enum": ["reminder", "motivation", "congratulations", "streak"], "description": "Type of alert." },
+        "isRead": { "type": "boolean", "description": "Whether the user viewed this card." },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "userId": { "type": "string" }
+      },
+      "required": ["title", "body", "type", "isRead", "userId"]
     }
   },
   "firestore": {
     "/users/{userId}/habits/{habitId}": {
       "schema": "Habit",
       "description": "User specific habits."
+    },
+    "/users/{userId}/notifications/{notificationId}": {
+      "schema": "Notification",
+      "description": "User specific notification alerts."
     },
     "/users/{userId}": {
       "schema": "UserProfile",

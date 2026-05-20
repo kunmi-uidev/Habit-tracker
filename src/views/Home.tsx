@@ -8,14 +8,15 @@ interface HomeProps {
   habits: Habit[];
   onToggleHabit: (id: string) => void;
   onAddHabit: () => void;
+  onDeleteHabit: (id: string) => void;
 }
 
-export function HomeView({ habits, onToggleHabit, onAddHabit }: HomeProps) {
+export function HomeView({ habits, onToggleHabit, onAddHabit, onDeleteHabit, dailyProgress }: HomeProps & { dailyProgress: number }) {
   return (
     <div className="pb-16">
       <Header title="Welcome Kunmi" />
       
-      <main className="px-4 space-y-8">
+      <main className="px-4 space-y-6">
         {/* Hero Section */}
         <section className="bg-[#F8F8F8] rounded-[32px] p-8 flex justify-between items-center overflow-hidden relative min-h-[160px]">
           <div className="max-w-[170px] z-10">
@@ -53,7 +54,7 @@ export function HomeView({ habits, onToggleHabit, onAddHabit }: HomeProps) {
           </div>
           <div className="space-y-4">
             {habits.map(habit => (
-              <HabitCard key={habit.id} habit={habit} onToggle={onToggleHabit} />
+              <HabitCard key={habit.id} habit={habit} onToggle={onToggleHabit} onDelete={onDeleteHabit} />
             ))}
           </div>
         </section>
@@ -64,7 +65,7 @@ export function HomeView({ habits, onToggleHabit, onAddHabit }: HomeProps) {
             <h3 className="text-[16px] font-semibold">Overall Progress</h3>
             <button className="text-[12px] font-medium text-[#141414]/40">View</button>
           </div>
-          <ProgressCard percentage={58} />
+          <ProgressCard percentage={dailyProgress} />
         </section>
       </main>
     </div>

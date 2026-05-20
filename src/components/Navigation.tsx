@@ -6,9 +6,10 @@ interface NavigationProps {
   currentView: ViewType;
   onViewChange: (view: ViewType) => void;
   onAddClick: () => void;
+  unreadCount?: number;
 }
 
-export function Navigation({ currentView, onViewChange, onAddClick }: NavigationProps) {
+export function Navigation({ currentView, onViewChange, onAddClick, unreadCount }: NavigationProps) {
   const tabs = [
     { id: 'home', icon: Home, label: 'Home' },
     { id: 'progress', icon: BarChart2, label: 'Progress' },
@@ -39,14 +40,21 @@ export function Navigation({ currentView, onViewChange, onAddClick }: Navigation
           <button
             key={tab.id}
             onClick={() => onViewChange(tab.id as ViewType)}
-            className="flex flex-col items-center gap-1.5 transition-all active:scale-95"
+            className="flex flex-col items-center gap-1.5 transition-all active:scale-95 relative"
           >
-            <Icon 
-              className={cn(
-                "w-6 h-6 transition-colors",
-                isActive ? "text-[#141414]" : "text-[#141414]/20"
-              )} 
-            />
+            <div className="relative">
+              <Icon 
+                className={cn(
+                  "w-6 h-6 transition-colors",
+                  isActive ? "text-[#141414]" : "text-[#141414]/20"
+                )} 
+              />
+              {tab.id === 'notification' && unreadCount !== undefined && unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-indigo-500 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold border border-white">
+                  {unreadCount}
+                </span>
+              )}
+            </div>
             <span className={cn(
               "text-[10px] font-medium transition-colors",
               isActive ? "text-[#141414]" : "text-[#141414]/20"

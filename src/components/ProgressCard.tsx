@@ -26,8 +26,8 @@ export function ProgressCard({ percentage, variant = 'compact' }: ProgressCardPr
         <h2 className="text-[48px] font-semibold leading-none tracking-tight">{percentage}%</h2>
         
         {/* Circular Progress Gauge */}
-        <div className="relative w-16 h-10 overflow-hidden">
-          <svg className="w-16 h-16 transform -translate-y-4 rotate-180">
+        <div className="relative w-16 h-12 overflow-hidden">
+          <svg className="w-16 h-16 transform translate-y-[6px] rotate-180">
             <circle
               cx="32"
               cy="32"
@@ -51,6 +51,15 @@ export function ProgressCard({ percentage, variant = 'compact' }: ProgressCardPr
               strokeDasharray={`${(88 * percentage) / 100} 176`}
               strokeDashoffset="0"
               strokeLinecap="round"
+            />
+            
+            {/* Tuner Handle */}
+            <circle
+              cx={32 + 28 * Math.cos((percentage / 100) * Math.PI)}
+              cy={32 + 28 * Math.sin((percentage / 100) * Math.PI)}
+              r="4"
+              fill="white"
+              className="drop-shadow-sm"
             />
           </svg>
         </div>

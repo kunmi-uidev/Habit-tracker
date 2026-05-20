@@ -3,7 +3,7 @@ export type DayOfWeek = 'M' | 'T' | 'W' | 'T_2' | 'F' | 'S' | 'S_2';
 export interface Habit {
   id: string;
   title: string;
-  icon: 'run' | 'water';
+  icon: string;
   completedDays: boolean[]; // 7 days
   isCompletedToday: boolean;
   streak: number;

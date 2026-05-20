@@ -9,13 +9,13 @@ interface ProgressProps {
   onDeleteHabit: (id: string) => void;
 }
 
-export function ProgressView({ habits, onToggleHabit, onDeleteHabit }: ProgressProps) {
+export function ProgressView({ habits, onToggleHabit, onDeleteHabit, dailyProgress }: ProgressProps & { dailyProgress: number }) {
   return (
     <div className="pb-16">
       <Header title="Your Progress" />
       
-      <main className="px-4 space-y-8">
-        <ProgressCard percentage={58} variant="full" />
+      <main className="px-4 space-y-6">
+        <ProgressCard percentage={dailyProgress} variant="full" />
 
         {/* Pending */}
         <section className="space-y-4">
