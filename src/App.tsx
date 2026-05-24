@@ -18,6 +18,7 @@ import { soundService } from './lib/sounds';
 import confetti from 'canvas-confetti';
 import { NotificationView } from './views/Notification';
 import { notificationService, NotificationItem } from './services/notificationService';
+import { ProfileView } from './views/Profile';
 
 const getInitialCompletedDays = () => {
   const todayIndex = new Date().getDay();
@@ -102,12 +103,45 @@ export default function App() {
   useEffect(() => {
     const todayIndex = new Date().getDay();
     if (!user) {
-      setHabits(INITIAL_HABITS.map(h => ({
-        ...h,
-        isCompletedToday: Array.isArray(h.completedDays) && h.completedDays.length === 7
-          ? !!h.completedDays[todayIndex]
-          : false
-      })));
+      if (username) {
+        const localKey = `habits_local_${username}`;
+        const stored = localStorage.getItem(localKey);
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored) as Habit[];
+            setHabits(parsed.map(h => ({
+              ...h,
+              completedDays: Array.isArray(h.completedDays) && h.completedDays.length === 7
+                ? h.completedDays
+                : [false, false, false, false, false, false, false],
+              isCompletedToday: Array.isArray(h.completedDays) && h.completedDays.length === 7
+                ? !!h.completedDays[todayIndex]
+                : false
+            })));
+            return;
+          } catch (e) {
+            console.error(e);
+          }
+        }
+        
+        // Let's decide if this username is one of the initial presets, otherwise start empty!
+        const isPreset = username.toLowerCase() === 'kunmi' || username.toLowerCase() === 'user';
+        const initial = isPreset ? INITIAL_HABITS : [];
+        setHabits(initial.map(h => ({
+          ...h,
+          isCompletedToday: Array.isArray(h.completedDays) && h.completedDays.length === 7
+            ? !!h.completedDays[todayIndex]
+            : false
+        })));
+        localStorage.setItem(localKey, JSON.stringify(initial));
+      } else {
+        setHabits(INITIAL_HABITS.map(h => ({
+          ...h,
+          isCompletedToday: Array.isArray(h.completedDays) && h.completedDays.length === 7
+            ? !!h.completedDays[todayIndex]
+            : false
+        })));
+      }
       return;
     }
 
@@ -132,7 +166,7 @@ export default function App() {
     });
 
     return () => unsubscribe();
-  }, [user]);
+  }, [user, username]);
 
   const handleToggleHabit = async (id: string) => {
     const habit = habits.find(h => h.id === id);
@@ -162,12 +196,16 @@ export default function App() {
       });
     } else {
       // Local state for demo mode
-      setHabits(prev => prev.map(h => h.id === id ? {
+      const updated = habits.map(h => h.id === id ? {
         ...h,
         isCompletedToday: isCompletedNow,
         completedDays: newCompletedDays,
         streak: newStreak
-      } : h));
+      } : h);
+      setHabits(updated);
+      if (username) {
+        localStorage.setItem(`habits_local_${username}`, JSON.stringify(updated));
+      }
     }
   };
 
@@ -187,7 +225,11 @@ export default function App() {
         ...newHabit,
         id: `demo-${Date.now()}`
       };
-      setHabits(prev => [...prev, demoHabit]);
+      const updated = [...habits, demoHabit];
+      setHabits(updated);
+      if (username) {
+        localStorage.setItem(`habits_local_${username}`, JSON.stringify(updated));
+      }
     }
 
     notificationService.addNotification(user ? user.uid : null, {
@@ -201,7 +243,11 @@ export default function App() {
     if (user && !id.startsWith('demo-')) {
       await habitService.deleteHabit(user.uid, id);
     } else {
-      setHabits(prev => prev.filter(h => h.id !== id));
+      const updated = habits.filter(h => h.id !== id);
+      setHabits(updated);
+      if (username) {
+        localStorage.setItem(`habits_local_${username}`, JSON.stringify(updated));
+      }
     }
   };
 
@@ -363,11 +409,21 @@ export default function App() {
           {currentView === 'profile' && (
             <motion.div
               key="profile"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex items-center justify-center h-[80vh] text-[#141414]/40 font-medium"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
             >
-              Profile view coming soon
+              <ProfileView
+                user={user}
+                username={username}
+                onChangeUsername={(newName) => {
+                  setUsername(newName);
+                  localStorage.setItem('habit_username', newName);
+                }}
+                habits={habits}
+                onLogin={handleLogin}
+              />
             </motion.div>
           )}
         </AnimatePresence>
