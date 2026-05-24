@@ -9,12 +9,13 @@ interface HomeProps {
   onToggleHabit: (id: string) => void;
   onAddHabit: () => void;
   onDeleteHabit: (id: string) => void;
+  username: string;
 }
 
-export function HomeView({ habits, onToggleHabit, onAddHabit, onDeleteHabit, dailyProgress }: HomeProps & { dailyProgress: number }) {
+export function HomeView({ habits, onToggleHabit, onAddHabit, onDeleteHabit, dailyProgress, username }: HomeProps & { dailyProgress: number }) {
   return (
     <div className="pb-16">
-      <Header title="Welcome Kunmi" />
+      <Header title={`Welcome ${username || 'User'}`} />
       
       <main className="px-4 space-y-6">
         {/* Hero Section */}

@@ -19,12 +19,24 @@ import confetti from 'canvas-confetti';
 import { NotificationView } from './views/Notification';
 import { notificationService, NotificationItem } from './services/notificationService';
 
+const getInitialCompletedDays = () => {
+  const todayIndex = new Date().getDay();
+  const arr = [false, false, false, false, false, false, false];
+  // Mark previous days of the week as true to simulate streak
+  for (let i = 0; i < 7; i++) {
+    if (i < todayIndex) {
+      arr[i] = true;
+    }
+  }
+  return arr;
+};
+
 const INITIAL_HABITS: Habit[] = [
   {
     id: 'demo-1',
     title: 'Walk 1km everyday.',
     icon: 'run',
-    completedDays: [true, true, true, true, false, false, false],
+    completedDays: getInitialCompletedDays(),
     isCompletedToday: false,
     streak: 4
   },
@@ -32,7 +44,7 @@ const INITIAL_HABITS: Habit[] = [
     id: 'demo-2',
     title: 'Drink 3.5 litres of water today',
     icon: 'water',
-    completedDays: [true, true, true, true, false, false, false],
+    completedDays: getInitialCompletedDays(),
     isCompletedToday: false,
     streak: 4
   }
@@ -47,6 +59,17 @@ export default function App() {
   const [habitToDelete, setHabitToDelete] = useState<Habit | null>(null);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [pushPermission, setPushPermission] = useState<'granted' | 'denied' | 'default' | 'unsupported'>('default');
+  const [username, setUsername] = useState<string>('');
+  const [showUsernameModal, setShowUsernameModal] = useState<boolean>(false);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('habit_username');
+    if (stored) {
+      setUsername(stored);
+    } else {
+      setShowUsernameModal(true);
+    }
+  }, []);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (u) => {
@@ -55,6 +78,17 @@ export default function App() {
     });
     return () => unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (user && !username) {
+      const defaultName = user.displayName || user.email?.split('@')[0] || '';
+      if (defaultName) {
+        setUsername(defaultName);
+        localStorage.setItem('habit_username', defaultName);
+        setShowUsernameModal(false);
+      }
+    }
+  }, [user, username]);
 
   useEffect(() => {
     const userId = user ? user.uid : null;
@@ -66,14 +100,28 @@ export default function App() {
   }, [user]);
 
   useEffect(() => {
+    const todayIndex = new Date().getDay();
     if (!user) {
-      setHabits(INITIAL_HABITS);
+      setHabits(INITIAL_HABITS.map(h => ({
+        ...h,
+        isCompletedToday: Array.isArray(h.completedDays) && h.completedDays.length === 7
+          ? !!h.completedDays[todayIndex]
+          : false
+      })));
       return;
     }
 
     const unsubscribe = habitService.subscribeToHabits(user.uid, (data) => {
       if (data.length > 0) {
-        setHabits(data);
+        setHabits(data.map(h => ({
+          ...h,
+          completedDays: Array.isArray(h.completedDays) && h.completedDays.length === 7
+            ? h.completedDays
+            : [false, false, false, false, false, false, false],
+          isCompletedToday: Array.isArray(h.completedDays) && h.completedDays.length === 7
+            ? !!h.completedDays[todayIndex]
+            : false
+        })));
       } else {
         // Bootstrap with demo data if empty
         INITIAL_HABITS.forEach(h => {
@@ -92,8 +140,8 @@ export default function App() {
 
     const isCompletedNow = !habit.isCompletedToday;
     const newCompletedDays = [...habit.completedDays];
-    // Friday index 4 for demo/image matching
-    newCompletedDays[4] = isCompletedNow;
+    const todayIndex = new Date().getDay();
+    newCompletedDays[todayIndex] = isCompletedNow;
 
     if (isCompletedNow) {
       soundService.playSuccess();
@@ -104,11 +152,13 @@ export default function App() {
       });
     }
 
+    const newStreak = isCompletedNow ? habit.streak + 1 : Math.max(0, habit.streak - 1);
+
     if (user && !id.startsWith('demo-')) {
       await habitService.updateHabit(user.uid, id, {
         isCompletedToday: isCompletedNow,
         completedDays: newCompletedDays,
-        streak: isCompletedNow ? habit.streak + 1 : habit.streak - 1
+        streak: newStreak
       });
     } else {
       // Local state for demo mode
@@ -116,7 +166,7 @@ export default function App() {
         ...h,
         isCompletedToday: isCompletedNow,
         completedDays: newCompletedDays,
-        streak: isCompletedNow ? h.streak + 1 : h.streak - 1
+        streak: newStreak
       } : h));
     }
   };
@@ -262,6 +312,7 @@ export default function App() {
                 onAddHabit={() => setIsAddingHabit(true)} 
                 onDeleteHabit={handleDeleteAttempt}
                 dailyProgress={dailyProgress}
+                username={username}
               />
             </motion.div>
           )}
@@ -385,6 +436,74 @@ export default function App() {
                     Yes, Delete Habit
                   </button>
                 </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        <AnimatePresence>
+          {showUsernameModal && (
+            <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
+              {/* Underlay */}
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-0 bg-black/60 backdrop-blur-[4px]"
+              />
+              
+              {/* Dialog Content */}
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+                className="relative bg-white w-full max-w-sm rounded-[32px] p-8 shadow-2xl space-y-6 z-10 border border-neutral-100"
+              >
+                <div className="text-center space-y-2">
+                  <div className="w-16 h-16 bg-[#141414]/5 rounded-2xl flex items-center justify-center mx-auto text-[28px] border border-[#141414]/5">
+                    👋
+                  </div>
+                  <h3 className="text-[18px] font-bold text-[#141414] tracking-tight font-sans">What's your name?</h3>
+                  <p className="text-[11.5px] text-[#141414]/45 px-4 leading-relaxed font-sans">
+                    Let's personalize your active habits with your real name!
+                  </p>
+                </div>
+
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  const target = e.currentTarget as typeof e.currentTarget & {
+                    usernameInput: { value: string };
+                  };
+                  const nameVal = target.usernameInput.value.trim();
+                  if (nameVal) {
+                    setUsername(nameVal);
+                    localStorage.setItem('habit_username', nameVal);
+                    setShowUsernameModal(false);
+                    soundService.playSuccess();
+                  }
+                }} className="space-y-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold uppercase tracking-wider text-[#141414]/40 font-mono">
+                      Your First Name / Nickname
+                    </label>
+                    <input
+                      name="usernameInput"
+                      type="text"
+                      required
+                      placeholder="e.g. Kunmi"
+                      defaultValue={username}
+                      className="w-full bg-[#F8F8F8] border border-[#141414]/5 hover:border-[#141414]/15 focus:border-[#141414] focus:bg-white text-[13px] text-[#141414] rounded-[18px] px-4 py-3.5 outline-none transition-all font-sans"
+                    />
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="w-full bg-[#141414] hover:bg-[#141414]/90 text-white font-bold py-3.5 rounded-[18px] text-[13px] transition-all hover:scale-[1.01] active:scale-95 shadow-sm font-sans"
+                  >
+                    Start Tracking
+                  </button>
+                </form>
               </motion.div>
             </div>
           )}

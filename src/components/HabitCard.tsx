@@ -14,7 +14,8 @@ interface HabitCardProps {
 
 export function HabitCard({ habit, onToggle, onDelete, showDays = true }: HabitCardProps) {
   const Icon = ICON_MAP[habit.icon] || ICON_MAP.activity;
-  const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  const days = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+  const todayIndex = new Date().getDay();
 
   const handleDragEnd = (_event: any, info: any) => {
     // If user dragged more than 90px in either left or right directions
@@ -72,18 +73,29 @@ export function HabitCard({ habit, onToggle, onDelete, showDays = true }: HabitC
           </div>
           
           {showDays && (
-            <div className="flex gap-1.5">
-              {days.map((day, idx) => (
-                <div key={idx} className="flex flex-col items-center gap-1">
-                  <span className="text-[10px] font-medium text-[#141414]/40">{day}</span>
-                  <div 
-                    className={cn(
-                      "w-1.5 h-1.5 rounded-full transition-colors",
-                      habit.completedDays[idx] ? "bg-[#141414]" : "bg-[#141414]/10"
-                    )} 
-                  />
-                </div>
-              ))}
+            <div className="flex gap-2">
+              {days.map((day, idx) => {
+                const isToday = idx === todayIndex;
+                return (
+                  <div key={idx} className="flex flex-col items-center gap-1.5">
+                    <span className={cn(
+                      "text-[10px] transition-colors",
+                      isToday ? "font-bold text-[#141414]" : "font-medium text-[#141414]/30"
+                    )}>
+                      {day}
+                    </span>
+                    <div 
+                      className={cn(
+                        "rounded-full transition-all duration-300",
+                        isToday ? "w-2.5 h-2.5 ring-2 ring-offset-2 ring-indigo-500/25 bg-indigo-500" : "w-1.5 h-1.5",
+                        habit.completedDays[idx] 
+                          ? (isToday ? "bg-indigo-600" : "bg-[#141414]") 
+                          : (isToday ? "bg-neutral-300/60" : "bg-[#141414]/10")
+                      )} 
+                    />
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
